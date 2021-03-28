@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "fsmirror": {
+      "commandName": "Project",
+      "commandLineArgs": "a b"
+    }
+  }
+}
