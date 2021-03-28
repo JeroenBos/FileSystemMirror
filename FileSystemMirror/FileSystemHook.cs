@@ -21,17 +21,6 @@ using System.Threading.Tasks;
 
 public class FileSystemHook
 {
-	private static int PARAM_INCORRECT
-	{
-		get
-		{
-			unchecked
-			{
-				return (int)0x80070057;
-			}
-		}
-	}
-
 	/// <summary>
 	/// Hooks a <see cref="FileSystemWatcher"/> to the specified path with the specified callbacks, and implements globbing filtering.
 	/// </summary>
@@ -58,11 +47,7 @@ public class FileSystemHook
 		if (sourcePatterns.Any(patterns => patterns.EndsWith(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))
 			throw new NotSupportedException("Watching for directory modification is not supported; Consider `dir/*` or `dir/**`");
 
-		static bool RequiresSubdirectories(string pattern)
-		{
-			return pattern.Contains("**") || pattern.Contains(Path.DirectorySeparatorChar) || pattern.Contains(Path.AltDirectorySeparatorChar);
-		}
-		bool includeSubdirectories = patterns.Count == 0 || sourcePatterns.Any(RequiresSubdirectories);
+		bool includeSubdirectories = patterns.Count == 0 || sourcePatterns.Any(FileSystemWatcherWithEventMapping.RequiresSubdirectories);
 
 		var watcher = new FileSystemWatcherWithEventMapping(patterns, ignorePatterns)
 		{
@@ -103,7 +88,7 @@ public class FileSystemHook
 	}
 
 
-	/// <param name="recoveryStrategy"> If you'd like to specified <see cref="RecoveryStrategy.None"/>, instead call <see cref="FileSystemHook.Hook(string, IEnumerable{string}, IEnumerable{string}?, FileSystemEventHandler?, FileSystemEventHandler?, FileSystemEventHandler?, ErrorEventHandler?, CancellationToken, bool)"/>. </param>
+	/// <param name="recoveryStrategy"> If you'd like to specify <see cref="RecoveryStrategy.None"/>, instead call <see cref="FileSystemHook.Hook(string, IEnumerable{string}, IEnumerable{string}?, FileSystemEventHandler?, FileSystemEventHandler?, FileSystemEventHandler?, ErrorEventHandler?, CancellationToken, bool)"/>. </param>
 	public static IDisposable RecoverableHook(RecoveryStrategy recoveryStrategy,
 											  string sourcePath,
 											  IEnumerable<string> sourcePatterns,
@@ -114,6 +99,8 @@ public class FileSystemHook
 											  OnError? errorObserver = null,
 											  CancellationToken cancellationToken = default)
 	{
+		if (recoveryStrategy is null)
+			throw new ArgumentNullException(nameof(recoveryStrategy));
 
 		var patterns = sourcePatterns?.ToList() ?? throw new ArgumentNullException(nameof(sourcePatterns));
 		var ignorePatterns = sourceIgnorePatterns?.ToArray() ?? Array.Empty<string>();

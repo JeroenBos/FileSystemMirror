@@ -33,13 +33,13 @@ namespace JBSnorro
 				throw new Exception($"!fullPath.StartsWith(sourcePath): '{fullPath}', '{basePath}'");
 
 			int start = basePath.Length;
-			if (basePath.EndsWith(Path.DirectorySeparatorChar) || basePath.EndsWith(Path.AltDirectorySeparatorChar))
+			if (basePath.EndsWith(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
 			{
 
 			}
 			else if (basePath.Length != fullPath.Length)
 			{
-				if (fullPath[start] != Path.DirectorySeparatorChar && fullPath[start] != Path.AltDirectorySeparatorChar)
+				if (!fullPath[start].IsDirectorySeparatorChar())
 					throw new Exception($"Path separator expected at index {start} in '{fullPath}'");
 				start++;
 			}
@@ -47,7 +47,6 @@ namespace JBSnorro
 			string relativePath = fullPath[start..];
 			return relativePath;
 		}
-
 
 		/// <summary>
 		/// Interprets a single string as a list (separated by <see cref="Path.PathSeparator"/>) of glob patterns and ignore glob patterns (those starting with !).
@@ -60,5 +59,6 @@ namespace JBSnorro
 			return (patterns, ignorepatterns);
 		}
 
+		public static char[] DirectorySeparators => new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
 	}
 }

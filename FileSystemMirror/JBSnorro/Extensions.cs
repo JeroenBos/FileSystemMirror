@@ -22,6 +22,23 @@ namespace JBSnorro
 		{
 			return index.GetOffset(collection.Count);
 		}
+		public static string EnsureEndsWithPathSeparator(this string path)
+		{
+			if (path == null) throw new ArgumentNullException(nameof(path));
+
+			if (path.EndsWith(DirectorySeparators))
+			{
+				return path;
+			}
+			else
+			{
+				return path + Path.DirectorySeparatorChar;
+			}
+		}
+		public static bool IsDirectorySeparatorChar(this char c)
+		{
+			return DirectorySeparators.Contains(c);
+		}
 		public static void RemoveAt<T>(this List<T> list, Index i)
 		{
 			list.RemoveAt(i.GetOffset(list.Count));

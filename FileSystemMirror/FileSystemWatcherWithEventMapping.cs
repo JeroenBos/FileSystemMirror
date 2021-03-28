@@ -10,10 +10,28 @@ using System.Threading.Tasks;
 
 class FileSystemWatcherWithEventMapping : IFileSystemWatcher, IDisposable
 {
+	/// <summary>
+	/// Gets whether the pattern requires to listen for events in subdirectory.
+	/// </summary>
+	public static bool RequiresSubdirectories(string pattern)
+	{
+		return pattern.Contains("**")
+			|| pattern.Contains(System.IO.Path.DirectorySeparatorChar)
+			|| pattern.Contains(System.IO.Path.AltDirectorySeparatorChar);
+	}
+	/// <summary>
+	/// Simplifies a pattern such that it is understood by the native implementation of the file system watcher.
+	/// I'm too lazy to build a custom implementation that facades the current <see cref="Filters"/> to modify each entry upon insertion.
+	/// Instead, before calling <see cref="Filters.Add(...)"/> just call this method.
+	/// </summary>
+	public static string Convert(string pattern)
+	{
+		return System.IO.Path.GetFileName(pattern)
+							 .Replace("**", "*")
+							 .Trim(DirectorySeparators);
+	}
+
 	private readonly FileSystemWatcher watcher = new FileSystemWatcher();
-
-
-
 	public IReadOnlyList<string> Patterns { get; }
 	public IReadOnlyList<string> IgnorePatterns { get; }
 	public FileSystemWatcherWithEventMapping(IReadOnlyList<string> patterns, IReadOnlyList<string> ignorePatterns)
