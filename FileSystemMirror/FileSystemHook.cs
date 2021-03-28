@@ -190,8 +190,7 @@ public class FileSystemHook
 
 		private IFileSystemWatcher Hook()
 		{
-			// maxAttempts is ok because if it ever triggers, that means that the hook was created succesfully
-			// because errors while hooking are handled below
+			// a new exceptions list is ok because if this os ever called, that means that the hook was created succesfully
 			return FileSystemHook.Hook(sourcePath, sourcePatterns, sourceIgnorePatterns, onCreated, onModified, onDeleted, CreateErrorHandler(new List<Exception>()));
 		}
 
