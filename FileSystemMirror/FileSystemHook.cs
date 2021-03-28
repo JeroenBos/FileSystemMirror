@@ -118,11 +118,11 @@ public class FileSystemHook
 		var patterns = sourcePatterns?.ToList() ?? throw new ArgumentNullException(nameof(sourcePatterns));
 		var ignorePatterns = sourceIgnorePatterns?.ToArray() ?? Array.Empty<string>();
 
-		var retryer = new PerennialHookRetryer(sourcePath, recoveryStrategy, patterns, ignorePatterns, onCreated, onModified, onDeleted, cancellationToken);
+		var retryer = new RecoveringHookRetryer(sourcePath, recoveryStrategy, patterns, ignorePatterns, onCreated, onModified, onDeleted, cancellationToken);
 		retryer.Start();
 		return retryer.Task;
 	}
-	class PerennialHookRetryer : Retryer
+	class RecoveringHookRetryer : Retryer
 	{
 		private readonly string sourcePath;
 		private readonly IReadOnlyList<string> sourcePatterns;
@@ -133,14 +133,14 @@ public class FileSystemHook
 
 		private readonly List<IFileSystemWatcher> watchers = new List<IFileSystemWatcher>();
 
-		internal PerennialHookRetryer(string sourcePath,
-									  RecoveryStrategy recoveryStrategy,
-									  IReadOnlyList<string> sourcePatterns,
-									  IReadOnlyList<string> sourceIgnorePatterns,
-									  FileSystemEventHandler? onCreated,
-									  FileSystemEventHandler? onModified,
-									  FileSystemEventHandler? onDeleted,
-									  CancellationToken cancellationToken)
+		internal RecoveringHookRetryer(string sourcePath,
+									   RecoveryStrategy recoveryStrategy,
+									   IReadOnlyList<string> sourcePatterns,
+									   IReadOnlyList<string> sourceIgnorePatterns,
+									   FileSystemEventHandler? onCreated,
+									   FileSystemEventHandler? onModified,
+									   FileSystemEventHandler? onDeleted,
+									   CancellationToken cancellationToken)
 			: base(recoveryStrategy, disposeOnError: false, cancellationToken)
 		{
 			this.sourcePath = sourcePath;
@@ -197,7 +197,7 @@ public class FileSystemHook
 
 		private IFileSystemWatcher HookAncestor(IReadOnlyList<Exception> exceptions)
 		{
-			foreach (var (ancestorDir, childName) in HookableParents(recoveryStrategy, sourcePath))
+			foreach (var (ancestorDir, childName) in recoveryStrategy.HookableParents(sourcePath))
 			{
 				Assert(childName?.EndsWith(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) ?? true);
 				if (ancestorDir.Exists)
@@ -220,23 +220,6 @@ public class FileSystemHook
 
 			throw new Exception("No hookable ancestor exists");
 		}
-
-
-
-		public static IEnumerable<(DirectoryInfo, string? ChildName)> HookableParents(RecoveryStrategy recoveryStrategy, string sourcePath)
-		{
-			var info = new DirectoryInfo(sourcePath);
-			yield return (info, null);
-			// TODO: take into account recoveryStrategy
-			while (info.Parent != null)
-			{
-				string childName = info.Name + "//";
-				info = info.Parent;
-				yield return (info, childName);
-			}
-		}
 	}
-
-
 }
 
