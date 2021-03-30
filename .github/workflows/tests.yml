@@ -19,8 +19,6 @@ jobs:
         dotnet-version: 6.0.100-preview.2.21155.3
     - name: Clean
       run: dotnet clean && dotnet nuget locals all --clear
-    - name: Workaround
-      run: dotnet nuget list source
     - name: Restore dependencies
       run: dotnet restore --verbosity diag --disable-parallel
     - name: Build
