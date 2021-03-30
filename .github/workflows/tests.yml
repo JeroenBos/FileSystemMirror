@@ -22,7 +22,7 @@ jobs:
     - name: Workaround
       run: dotnet nuget list source
     - name: Restore dependencies
-      run: dotnet restore --verbosity detailed
+      run: dotnet restore --verbosity diag
     - name: Build
       run: dotnet build --no-restore
     - name: Test
