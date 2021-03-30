@@ -20,7 +20,7 @@ jobs:
     - name: Clean
       run: dotnet clean && dotnet nuget locals all --clear
     - name: Restore dependencies
-      run: dotnet restore --verbosity diag --disable-parallel
+      run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
     - name: Test
