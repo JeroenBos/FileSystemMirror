@@ -20,7 +20,7 @@ jobs:
     - name: Clean
       run: dotnet clean && dotnet nuget locals all --clear
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore --verbosity detailed
     - name: Build
       run: dotnet build --no-restore
     - name: Test
