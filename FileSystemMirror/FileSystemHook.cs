@@ -24,6 +24,7 @@ public class FileSystemHook
 	/// <summary>
 	/// Hooks a <see cref="FileSystemWatcher"/> to the specified path with the specified callbacks, and implements globbing filtering.
 	/// </summary>
+	/// <param name="sourcePatterns">Empty means everything. Patterns ending on a directory separator matches directories only and vice versa. </param>
 	public static IFileSystemWatcher Hook(
 			string sourcePath,
 			IEnumerable<string> sourcePatterns,
@@ -38,14 +39,9 @@ public class FileSystemHook
 		var patterns = sourcePatterns?.ToList() ?? throw new ArgumentNullException(nameof(sourcePatterns));
 		var ignorePatterns = sourceIgnorePatterns?.ToArray() ?? Array.Empty<string>();
 
-		// if (patterns.Count == 0)
-		// 	throw new ArgumentException("At least one pattern must be given. Specify `**` for all files, or `**/` for all directories, or both for both?", nameof(sourcePatterns));
-
 		if (sourcePatterns.Any(patterns => patterns.ContainsMultiple("**")))
 			throw new ArgumentException("Multiple ** aren't supported", nameof(sourcePatterns));
 
-		if (sourcePatterns.Any(patterns => patterns.EndsWith(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))
-			throw new NotSupportedException("Watching for directory modification is not supported; Consider `dir/*` or `dir/**`");
 
 		bool includeSubdirectories = patterns.Count == 0 || sourcePatterns.Any(FileSystemWatcherWithEventMapping.RequiresSubdirectories);
 
@@ -77,7 +73,7 @@ public class FileSystemHook
 
 		foreach (var pattern in sourcePatterns)
 		{
-			watcher.Filters.Add(Path.GetFileName(pattern).Replace("**", "*").Trim());
+			watcher.Filters.Add(FileSystemWatcherWithEventMapping.Convert(pattern));
 		}
 
 		if (!cancellationToken.IsCancellationRequested)

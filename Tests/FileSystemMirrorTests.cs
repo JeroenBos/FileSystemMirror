@@ -256,7 +256,7 @@ namespace FileSystemMirrorTests
 	public class HookTests : Tests
 	{
 		[Test]
-		public async Task DetectCreationFile()
+		public async Task Can_detect_creating_file()
 		{
 			string dir = GetTempDirectory();
 			string filename = "a.txt";
@@ -275,7 +275,45 @@ namespace FileSystemMirrorTests
 			Assert.IsTrue(trigger.IsCompletedSuccessfully);
 		}
 		[Test]
-		public async Task DismissCreationNestedFile()
+		public async Task Can_detect_creating_directory()
+		{
+			string parentDir = GetTempDirectory();
+			string dirname = "a";
+
+			using var hook = FileSystemHook.Hook(parentDir,
+				sourcePatterns: new[] { "*/" },
+				onCreated: RecordTrigger(out var trigger)
+			);
+
+
+			await WaitWithTimeout(trigger, () =>
+			{
+				Directory.CreateDirectory(Path.Combine(parentDir, dirname));
+			});
+
+			Assert.IsTrue(trigger.IsCompletedSuccessfully);
+		}
+		[Test]
+		public async Task Creating_file_doesnt_trigger_directory_creation()
+		{
+			string parentDir = GetTempDirectory();
+			string dirname = "a";
+
+			using var hook = FileSystemHook.Hook(parentDir,
+				sourcePatterns: new[] { "*" }, // listens to files only
+				onCreated: RecordTrigger(out var trigger)
+			);
+
+
+			await WaitWithTimeout(trigger, () =>
+			{
+				Directory.CreateDirectory(Path.Combine(parentDir, dirname));
+			});
+
+			Assert.IsFalse(trigger.IsCompletedSuccessfully);
+		}
+		[Test]
+		public async Task Creating_nested_file_is_filtered_out()
 		{
 			string dir = GetTempDirectory();
 			string nestedDir = "a";
@@ -295,7 +333,7 @@ namespace FileSystemMirrorTests
 			Assert.IsFalse(trigger.IsCompletedSuccessfully);
 		}
 		[Test]
-		public async Task DismissCreationAlreadyExistingDirectory()
+		public async Task Creation_already_existing_dir_is_dismissed()
 		{
 			// Arrange
 			string dir = GetTempDirectory();
@@ -317,7 +355,7 @@ namespace FileSystemMirrorTests
 			Assert.IsFalse(trigger.IsCompletedSuccessfully);
 		}
 		[Test]
-		public async Task DetectCreationNestedFile()
+		public async Task Can_detect_creation_nested_file()
 		{
 			string dir = GetTempDirectory();
 			string nestedDir = "a";
@@ -343,7 +381,7 @@ namespace FileSystemMirrorTests
 			string nestedDir = Path.Combine(dir, "a");
 
 			using var hook = FileSystemHook.Hook(dir,
-				sourcePatterns: new[] { "**" },
+				sourcePatterns: new[] { "**/" },
 				onCreated: RecordTrigger(out var trigger)
 			);
 
@@ -389,6 +427,28 @@ namespace FileSystemMirrorTests
 			});
 
 			Assert.IsFalse(trigger.IsCompletedSuccessfully);
+		}
+
+	}
+	class DirectoryHookTests : Tests
+	{
+		[Test]
+		public async Task Can_detect_directory_creation()
+		{
+			string dir = GetTempDirectory();
+			using var hook = FileSystemHook.Hook(dir,
+				sourcePatterns: new[] { "**" },
+				onCreated: RecordTrigger(out var trigger)
+			);
+
+
+			await WaitWithTimeout(trigger, () =>
+			{
+				Directory.CreateDirectory(Path.Combine(dir, "a"));
+				CreateFile(dir, "a", "b.txt");
+			});
+
+			Assert.IsTrue(trigger.IsCompletedSuccessfully);
 		}
 
 	}
@@ -481,9 +541,9 @@ namespace FileSystemMirrorTests
 			var createdTcs = new TaskCompletionSource();
 			IFileSystemWatcher hook = null!;
 			using (hook = FileSystemHook.Hook(dir,
-												sourcePatterns: new[] { "**" },
-												onError: onError,
-												onCreated: onCreated))
+											  sourcePatterns: Array.Empty<string>(),
+											  onError: onError,
+											  onCreated: onCreated))
 			{
 				// Act 1
 				var completedTask = await WaitWithTimeout(erroredTcs.Task, () =>

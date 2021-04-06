@@ -39,21 +39,57 @@ class FileSystemWatcherWithEventMapping : IFileSystemWatcher, IDisposable
 		Patterns = patterns;
 		IgnorePatterns = ignorePatterns;
 	}
-
-	private bool matches(string fullPath)
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <param name="fullPath"></param>
+	/// <param name="ignoreTrailingDirectorySeparator">
+	/// Indicates whether the comparison is to ignore whether or not <paramref name="fullPath"/> ends on a directory separator character. 
+	/// Null means, try, but if not possible, ignore it. </param>
+	/// <returns></returns>
+	private bool matches(string fullPath, bool? ignoreTrailingDirectorySeparator = null)
 	{
 		if (this.Patterns.Count == 0)
 			return true;
 
 		string relativePath = ToRelativePath(fullPath, this.Path);
-		return GlobPattern.Matches(relativePath, this.Patterns, this.IgnorePatterns);
+
+
+		if (ignoreTrailingDirectorySeparator is false)
+		{
+			// we could also incorporate the NotifyFilter flags to determine if it could have been one or the other
+			bool directory = Directory.Exists(fullPath);
+			if (directory)
+			{
+				relativePath = relativePath.EnsureEndsWithPathSeparator();
+			}
+		}
+		else if (ignoreTrailingDirectorySeparator is null)
+		{
+			ignoreTrailingDirectorySeparator = !this.watcher.NotifyFilter.HasFlag(NotifyFilters.DirectoryName);
+		}
+
+
+		if (ignoreTrailingDirectorySeparator.Value)
+		{
+			// TODO: optimize such that these lists don't have to be created
+			return GlobPattern.Matches(relativePath.Trim(DirectorySeparators),
+									   this.Patterns.Select(TrimDirectorySeparators).ToList(),
+									   this.IgnorePatterns.Select(TrimDirectorySeparators).ToList());
+
+			static string TrimDirectorySeparators(string s) => s.Trim(DirectorySeparators);
+		}
+		else
+		{
+			return GlobPattern.Matches(relativePath, this.Patterns, this.IgnorePatterns);
+		}
 	}
 
 	protected FileSystemEventHandler? MapChangedEventHandler(FileSystemEventHandler handler)
 	{
 		return (sender, e) =>
 		{
-			if (matches(e.FullPath))
+			if (matches(e.FullPath, ignoreTrailingDirectorySeparator: false))
 				handler(sender, e);
 		};
 	}
@@ -62,7 +98,7 @@ class FileSystemWatcherWithEventMapping : IFileSystemWatcher, IDisposable
 	{
 		return (sender, e) =>
 		{
-			if (matches(e.FullPath))
+			if (matches(e.FullPath, ignoreTrailingDirectorySeparator: false))
 				handler(sender, e);
 		};
 	}
@@ -71,7 +107,8 @@ class FileSystemWatcherWithEventMapping : IFileSystemWatcher, IDisposable
 	{
 		return (sender, e) =>
 		{
-			if (matches(e.FullPath))
+			// in case of a deletion it cannot be determined anymore whether it was a file or directory, hence the null
+			if (matches(e.FullPath, ignoreTrailingDirectorySeparator: null))
 				handler(sender, e);
 		};
 	}
