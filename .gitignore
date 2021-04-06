@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Note that I ran `git update-index --skip-worktree "Tests/.Program.cs"`
