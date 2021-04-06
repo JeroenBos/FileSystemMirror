@@ -49,7 +49,7 @@ var arguments = new Symbol[]
 return new RootCommand("Copies all files matching patterns on modification/creation from source to dest")
 {
 	Handler = CommandHandler.Create<DirectoryInfo, DirectoryInfo, string, bool, string, string?>(main),
-	Name = "mirror",
+	Name = "fsmirror",
 }.With(arguments).InvokeAsync(args).Result;
 
 
@@ -70,7 +70,6 @@ ILogger getLogger(string logfile)
 	}
 	return new FileLogger(getLoggerPath());
 }
-
 
 void main(DirectoryInfo source, DirectoryInfo destination, string patterns, bool mirrorDeletions, string logfile, string? tag)
 {
