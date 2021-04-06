@@ -4,11 +4,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace JBSnorro
 {
-	static class Globals
+	public static class Globals
 	{
 		public static bool IsFileSystemCaseSensitive
 		{
@@ -60,5 +61,16 @@ namespace JBSnorro
 		}
 
 		public static char[] DirectorySeparators => new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+
+		/// <summary>
+		/// Gets the cancellation token that indicates whether ctrl+c or ctrl+break has been pressed in a console application.
+		/// </summary>
+		public static CancellationToken ConsoleCanceledCancellationToken { get; } = CreateConsoleCanceledCancellationToken();
+		internal static CancellationToken CreateConsoleCanceledCancellationToken()
+		{
+			var tcs = new CancellationTokenSource();
+			Console.CancelKeyPress += (_, _) => tcs.Cancel();
+			return tcs.Token;
+		}
 	}
 }

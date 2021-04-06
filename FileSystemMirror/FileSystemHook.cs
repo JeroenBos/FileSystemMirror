@@ -151,7 +151,7 @@ public class FileSystemHook
 				watcher = this.HookAncestor(exceptions);
 			}
 
-
+			// TODO: refactor this.watchers to a field instead of list and expose a Task to await the last one
 			foreach (var disposable in this.watchers)
 				disposable.Dispose();
 			this.watchers.Clear();

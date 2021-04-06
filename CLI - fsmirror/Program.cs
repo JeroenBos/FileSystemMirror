@@ -77,9 +77,15 @@ void main(DirectoryInfo source, DirectoryInfo destination, string patterns, bool
 
 	logger.TryLog($"Start up {(tag == null ? "" : tag + " ")}:(`{source.FullName}`, `{destination.FullName}`, `{patterns}`, `{mirrorDeletions}`, `{CommandLineBuilderExtensions.AssemblyVersion}`");
 
-	using (FileSystemMirror.Mirror(source.FullName, destination.FullName, patterns, mirrorDeletions, logger))
+	try
 	{
+		using (FileSystemMirror.Mirror(source.FullName, destination.FullName, patterns, mirrorDeletions, logger, cancellationToken: Globals.ConsoleCanceledCancellationToken))
+		{
+			while (!Globals.ConsoleCanceledCancellationToken.IsCancellationRequested) { }
+		}
 	}
-
-	logger.TryLog($"Stopping {tag}");
+	finally
+	{
+		logger.TryLog($"Stopping {tag}");
+	}
 }
