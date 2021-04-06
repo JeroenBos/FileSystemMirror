@@ -17,10 +17,11 @@ public static class FileSystemMirror
 									 string compositePatterns,
 									 bool mirrorDeletions = true,
 									 ILogger? logger = null,
-									 RecoveryStrategy? recoveryStrategy = null)
+									 RecoveryStrategy? recoveryStrategy = null,
+									 CancellationToken cancellationToken = default)
 	{
 		var (sourcePatterns, sourceIgnorePatterns) = DecomposePatterns(compositePatterns);
-		return Mirror(sourcePath, destPath, sourcePatterns, sourceIgnorePatterns, mirrorDeletions, logger: logger, recoveryStrategy: recoveryStrategy);
+		return Mirror(sourcePath, destPath, sourcePatterns, sourceIgnorePatterns, mirrorDeletions, recoveryStrategy, logger, cancellationToken);
 	}
 	/// <summary>
 	/// Mirrors a globbed source file system to a destination file system.
@@ -47,6 +48,7 @@ public static class FileSystemMirror
 						onCreated: createCallback(CopyFile),
 						onDeleted: mirrorDeletions ? createCallback(DeleteFile) : null,
 						onModified: createCallback(CopyFile),
+						triggerOnCreatedOnExistingFiles: true,
 						cancellationToken: cancellationToken);
 		}
 		else
