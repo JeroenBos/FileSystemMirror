@@ -81,5 +81,5 @@ void main(DirectoryInfo source, DirectoryInfo destination, string patterns, bool
 	{
 	}
 
-	logger.TryLog($"Stoping {tag}");
+	logger.TryLog($"Stopping {tag}");
 }
