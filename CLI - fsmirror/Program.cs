@@ -2,8 +2,7 @@
 using System.IO;
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using JBSnorro;
-using System.CommandLine.Builder;
+using System.Threading;
 
 // Override some default messages:
 #if false  // can be enabled with new version of System.CommandLine
@@ -44,15 +43,11 @@ var arguments = new Symbol[]
 	)
 };
 
-// C:\git\FileSystemMirror\fsmirror\bin\Debug\net5.0\fsmirror.exe
-
 return new RootCommand("Copies all files matching patterns on modification/creation from source to dest")
 {
-	Handler = CommandHandler.Create<DirectoryInfo, DirectoryInfo, string, bool, string, string?>(main),
+	Handler = CommandHandler.Create<DirectoryInfo, DirectoryInfo, string, bool, string, string?, CancellationToken>(main),
 	Name = "fsmirror",
 }.With(arguments).InvokeAsync(args).Result;
-
-
 
 string getLoggerPath()
 {
@@ -71,18 +66,25 @@ ILogger getLogger(string logfile)
 	return new FileLogger(getLoggerPath());
 }
 
-void main(DirectoryInfo source, DirectoryInfo destination, string patterns, bool mirrorDeletions, string logfile, string? tag)
+/// <param name="cancellationToken"> Canceled on e.g. process exit or Ctrl+C events. </param>
+void main(DirectoryInfo source, DirectoryInfo destination, string patterns, bool mirrorDeletions, string logfile, string? tag, CancellationToken cancellationToken)
 {
-	var logger = getLogger(logfile);
 
+	var logger = getLogger(logfile);
 	logger.TryLog($"Start up {(tag == null ? "" : tag + " ")}:(source=`{source.FullName}`, dest=`{destination.FullName}`, patterns=`{patterns}`, mirrorDeletions={mirrorDeletions}, version={CommandLineBuilderExtensions.AssemblyVersion})");
 
 	try
 	{
-		using (FileSystemMirror.Mirror(source.FullName, destination.FullName, patterns, mirrorDeletions, logger, cancellationToken: Globals.ConsoleCanceledCancellationToken))
+		cancellationToken.ThrowIfCancellationRequested();
+
+		using (FileSystemMirror.Mirror(source.FullName, destination.FullName, patterns, mirrorDeletions, logger, cancellationToken: cancellationToken))
 		{
-			while (!Globals.ConsoleCanceledCancellationToken.IsCancellationRequested) { }
+			while (true)
+				cancellationToken.ThrowIfCancellationRequested();
 		}
+	}
+	catch (OperationCanceledException)
+	{
 	}
 	finally
 	{
