@@ -75,7 +75,7 @@ void main(DirectoryInfo source, DirectoryInfo destination, string patterns, bool
 {
 	var logger = getLogger(logfile);
 
-	logger.TryLog($"Start up {(tag == null ? "" : tag + " ")}:(`{source.FullName}`, `{destination.FullName}`, `{patterns}`, `{mirrorDeletions}`, `{CommandLineBuilderExtensions.AssemblyVersion}`");
+	logger.TryLog($"Start up {(tag == null ? "" : tag + " ")}:(source=`{source.FullName}`, dest=`{destination.FullName}`, patterns=`{patterns}`, mirrorDeletions={mirrorDeletions}, version={CommandLineBuilderExtensions.AssemblyVersion})");
 
 	try
 	{
